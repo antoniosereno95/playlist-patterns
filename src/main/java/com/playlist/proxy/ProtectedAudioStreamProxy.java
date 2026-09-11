@@ -15,6 +15,12 @@ import java.util.function.Supplier;
  */
 public class ProtectedAudioStreamProxy implements AudioStream {
 
+  private final Track track;
+  private final Subscription plan;
+  private final Supplier<AudioStream> loader;
+  private AudioStream real;
+  private byte[] cachedBytes;
+
   /**
    * Cria o proxy com uma fábrica explícita do objeto real.
    *
@@ -25,8 +31,12 @@ public class ProtectedAudioStreamProxy implements AudioStream {
    * @throws IllegalArgumentException se qualquer argumento for nulo.
    */
   public ProtectedAudioStreamProxy(Track track, Subscription plan, Supplier<AudioStream> loader) {
-    throw new UnsupportedOperationException(
-            "Exercício 3: implemente o construtor de ProtectedAudioStreamProxy");
+    if (track == null || plan == null || loader == null) {
+      throw new IllegalArgumentException("Nenhum dos argumentos do construtor pode ser nulo.");
+    }
+    this.track = track;
+    this.plan = plan;
+    this.loader = loader;
   }
 
   /**
@@ -36,8 +46,7 @@ public class ProtectedAudioStreamProxy implements AudioStream {
    * @param plan plano de assinatura de quem está ouvindo.
    */
   public ProtectedAudioStreamProxy(Track track, Subscription plan) {
-    throw new UnsupportedOperationException(
-            "Exercício 3: implemente o construtor de conveniência de ProtectedAudioStreamProxy");
+    this(track, plan, () -> new RemoteAudioStream(track));
   }
 
   /**
@@ -46,14 +55,12 @@ public class ProtectedAudioStreamProxy implements AudioStream {
    * @return {@code true} apenas depois que o stream real tiver sido carregado.
    */
   public boolean isLoaded() {
-    throw new UnsupportedOperationException(
-            "Exercício 3: implemente ProtectedAudioStreamProxy.isLoaded");
+    return this.real != null;
   }
 
   @Override
   public String getTrackId() {
-    throw new UnsupportedOperationException(
-            "Exercício 3: implemente ProtectedAudioStreamProxy.getTrackId");
+    return this.track.id();
   }
 
   /**
@@ -65,8 +72,20 @@ public class ProtectedAudioStreamProxy implements AudioStream {
    */
   @Override
   public byte[] readBytes() {
-    throw new UnsupportedOperationException(
-            "Exercício 3: implemente ProtectedAudioStreamProxy.readBytes");
+    // 1. Proteção: bloqueia acesso antes de acionar o loader
+    if (this.track.premium() && this.plan == Subscription.FREE) {
+      throw new AccessDeniedException("Assinantes do plano FREE não têm acesso a faixas premium.");
+    }
+
+    // 2. Carga Preguiçosa (Lazy Loading) e Cache
+    if (this.cachedBytes == null) {
+      if (this.real == null) {
+        this.real = this.loader.get();
+      }
+      this.cachedBytes = this.real.readBytes();
+    }
+
+    // 3. Cópia defensiva para não expor o array interno
+    return this.cachedBytes.clone();
   }
 }
-

@@ -1,9 +1,13 @@
 package com.playlist.decorator;
 
+import java.util.Locale;
+
 /**
  * Efeito que zera amostras cujo valor absoluto fica abaixo de um limiar.
  */
 public final class NoiseGateEffect extends AudioEffect {
+
+  private final double threshold;
 
   /**
    * Cria o efeito de noise gate.
@@ -13,17 +17,24 @@ public final class NoiseGateEffect extends AudioEffect {
    */
   public NoiseGateEffect(AudioTrack wrapped, double threshold) {
     super(wrapped);
-    throw new UnsupportedOperationException(
-            "Exercício 4: implemente o construtor de NoiseGateEffect");
+    this.threshold = threshold;
   }
 
   @Override
   protected String describe() {
-    throw new UnsupportedOperationException("Exercício 4: implemente NoiseGateEffect.describe");
+    return String.format(Locale.ROOT, "noiseGate(%.2f)", this.threshold);
   }
 
   @Override
   public double[] getSamples() {
-    throw new UnsupportedOperationException("Exercício 4: implemente NoiseGateEffect.getSamples");
+    double[] samples = this.wrapped.getSamples();
+
+    for (int i = 0; i < samples.length; i++) {
+      if (Math.abs(samples[i]) < this.threshold) {
+        samples[i] = 0.0;
+      }
+    }
+
+    return samples;
   }
 }

@@ -89,7 +89,7 @@ public class PlaylistFacade {
       samples[i] = bytes[i] / 128.0;
     }
 
-    AudioTrack raw = new RawAudioTrack(track.getTitle(), samples);
+    AudioTrack raw = new RawAudioTrack(track.title(), samples);
     AudioTrack withVolume = new VolumeEffect(raw, volume);
     return new FadeInEffect(withVolume, fadeInSamples);
   }

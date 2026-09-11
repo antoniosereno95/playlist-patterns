@@ -34,12 +34,12 @@ public class TrackItem implements MediaItem {
 
   @Override
   public String getName() {
-    return this.track.getTitle();
+    return this.track.title();
   }
 
   @Override
   public int getDurationSeconds() {
-    return this.track.getDurationSeconds();
+    return this.track.durationSeconds();
   }
 
   @Override

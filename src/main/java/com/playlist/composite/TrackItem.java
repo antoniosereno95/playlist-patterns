@@ -8,6 +8,8 @@ import java.util.List;
  */
 public class TrackItem implements MediaItem {
 
+  private final Track track;
+
   /**
    * Cria a folha a partir de uma faixa.
    *
@@ -15,7 +17,10 @@ public class TrackItem implements MediaItem {
    * @throws IllegalArgumentException se {@code track} for nula.
    */
   public TrackItem(Track track) {
-    throw new UnsupportedOperationException("Exercício 1: implemente o construtor de TrackItem");
+    if (track == null) {
+      throw new IllegalArgumentException("A faixa (track) não pode ser nula.");
+    }
+    this.track = track;
   }
 
   /**
@@ -24,26 +29,26 @@ public class TrackItem implements MediaItem {
    * @return a faixa original.
    */
   public Track getTrack() {
-    throw new UnsupportedOperationException("Exercício 1: implemente TrackItem.getTrack");
+    return this.track;
   }
 
   @Override
   public String getName() {
-    throw new UnsupportedOperationException("Exercício 1: implemente TrackItem.getName");
+    return this.track.getTitle();
   }
 
   @Override
   public int getDurationSeconds() {
-    throw new UnsupportedOperationException("Exercício 1: implemente TrackItem.getDurationSeconds");
+    return this.track.getDurationSeconds();
   }
 
   @Override
   public int getTrackCount() {
-    throw new UnsupportedOperationException("Exercício 1: implemente TrackItem.getTrackCount");
+    return 1;
   }
 
   @Override
   public List<Track> flatten() {
-    throw new UnsupportedOperationException("Exercício 1: implemente TrackItem.flatten");
+    return List.of(this.track);
   }
 }

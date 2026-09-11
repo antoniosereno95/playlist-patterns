@@ -2,9 +2,18 @@ package com.playlist.facade;
 
 import com.playlist.adapter.TrackCatalog;
 import com.playlist.composite.PlaylistNode;
+import com.playlist.composite.TrackItem;
 import com.playlist.core.Subscription;
+import com.playlist.core.Track;
 import com.playlist.core.TrackNotFoundException;
 import com.playlist.decorator.AudioTrack;
+import com.playlist.decorator.FadeInEffect;
+import com.playlist.decorator.RawAudioTrack;
+import com.playlist.decorator.VolumeEffect;
+import com.playlist.proxy.ProtectedAudioStreamProxy;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Fachada que esconde do mundo externo a colaboração entre catálogo, playlists,
@@ -14,6 +23,10 @@ import com.playlist.decorator.AudioTrack;
  */
 public class PlaylistFacade {
 
+  private final TrackCatalog catalog;
+  private final Subscription plan;
+  private final Map<String, ProtectedAudioStreamProxy> streams = new HashMap<>();
+
   /**
    * Monta a fachada.
    *
@@ -22,7 +35,11 @@ public class PlaylistFacade {
    * @throws IllegalArgumentException se qualquer argumento for nulo.
    */
   public PlaylistFacade(TrackCatalog catalog, Subscription plan) {
-    throw new UnsupportedOperationException("Exercício 5: implemente o construtor de PlaylistFacade");
+    if (catalog == null || plan == null) {
+      throw new IllegalArgumentException("O catálogo e o plano não podem ser nulos.");
+    }
+    this.catalog = catalog;
+    this.plan = plan;
   }
 
   /**
@@ -32,7 +49,11 @@ public class PlaylistFacade {
    * @return a playlist preenchida.
    */
   public PlaylistNode buildLibrary(String name) {
-    throw new UnsupportedOperationException("Exercício 5: implemente PlaylistFacade.buildLibrary");
+    PlaylistNode playlist = new PlaylistNode(name);
+    for (Track track : this.catalog.findAll()) {
+      playlist.add(new TrackItem(track));
+    }
+    return playlist;
   }
 
   /**
@@ -43,7 +64,11 @@ public class PlaylistFacade {
    * @throws TrackNotFoundException se a faixa não existir no catálogo.
    */
   public byte[] listen(String trackId) {
-    throw new UnsupportedOperationException("Exercício 5: implemente PlaylistFacade.listen");
+    Track track = requireTrack(trackId);
+    ProtectedAudioStreamProxy proxy = this.streams.computeIfAbsent(
+        trackId, id -> new ProtectedAudioStreamProxy(track, this.plan)
+    );
+    return proxy.readBytes();
   }
 
   /**
@@ -56,6 +81,24 @@ public class PlaylistFacade {
    * @throws TrackNotFoundException se a faixa não existir no catálogo.
    */
   public AudioTrack preview(String trackId, double volume, int fadeInSamples) {
-    throw new UnsupportedOperationException("Exercício 5: implemente PlaylistFacade.preview");
+    Track track = requireTrack(trackId);
+    byte[] bytes = listen(trackId);
+
+    double[] samples = new double[bytes.length];
+    for (int i = 0; i < bytes.length; i++) {
+      samples[i] = bytes[i] / 128.0;
+    }
+
+    AudioTrack raw = new RawAudioTrack(track.getTitle(), samples);
+    AudioTrack withVolume = new VolumeEffect(raw, volume);
+    return new FadeInEffect(withVolume, fadeInSamples);
+  }
+
+  /**
+   * Método auxiliar para buscar uma faixa no catálogo e garantir que ela existe.
+   */
+  private Track requireTrack(String trackId) {
+    return this.catalog.findById(trackId)
+        .orElseThrow(() -> new TrackNotFoundException("Faixa não encontrada para o ID: " + trackId));
   }
 }
